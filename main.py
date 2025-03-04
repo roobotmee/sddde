@@ -18,7 +18,7 @@ trigger_words = [
 	"битта", "иккита", "учта", "тўртта", "торта", "икта"
 ]
 
-block_words = ["olamiz", "kam", "yuramiz", ]
+block_words = ["olamiz", "yuramiz", "оламиз", "кам", "юрамиз", "𝐊𝐀𝐌", "𝐎𝐋𝐀𝐌𝐈𝐙", "olamiz"]
 ignore_words = ["your user id:", "current chat id:"]
 
 @client.on(events.NewMessage)
@@ -32,6 +32,16 @@ async def handler(event):
 	text = getattr(event.message, "text", "").lower().strip()
 	if not text:
 		return  # Xabar bo‘lmasa, qaytamiz
+	
+	# /del buyrug'ini tekshirish
+	if text == "/del":
+		if event.chat_id == target_group_id:
+			async for message in client.iter_messages(target_group_id):
+				await client.delete_messages(target_group_id, message.id)
+			print("Barcha xabarlar o'chirildi.")
+		else:
+			print("Bu buyruq faqat belgilangan guruhda ishlaydi.")
+		return
 	
 	# Agar xabar ignore_words ichida bo‘lsa, yubormaymiz
 	if any(word in text for word in ignore_words):
@@ -53,16 +63,19 @@ async def handler(event):
 	chat_title = getattr(chat, "title", "Guruh nomi yo'q")
 	chat_username = f"https://t.me/{chat.username}" if getattr(chat, "username", None) else chat_title
 	
-	# Agar trigger so‘zlari bo‘lsa va block_words so‘zlari bo‘lmasa
-	if any(word in text for word in trigger_words) and not any(block in text for block in block_words):
+	# Agar block_words so‘zlari bo'lmasa va trigger so‘zlari bo‘lsa
+	if not any(block in text for block in block_words) and any(word in text for word in trigger_words):
 		formatted_message = (f"👋 Tog'ala yangi buyurtma !\n"
 		                     f"<b>👥 Guruhdan :</b> <a href='{chat_username}'>@Azimjon Vip</a>\n"
 		                     f"<b>👤 Murojat uchun :</b> <a href='{user_link}'>Profil</a>\n"
 		                     f"<b>📞 Telefon raqami:</b> {phone_number}\n\n"
 		                     f"✉️ <b>Xabar:</b> {event.message.text} \n\n🤲 Oq yol yaxhsi yetvolila :) \n Olinga bosa 🤝 Bosib qoyila ")
 		
-		await client.send_message(target_group_id, formatted_message, parse_mode='html')
-		print(f"[{event.chat_id}] Xabar nusxalandi:", event.message.text)
+		try:
+			await client.send_message(target_group_id, formatted_message, parse_mode='html')
+			print(f"[{event.chat_id}] Xabar nusxalandi:", event.message.text)
+		except Exception as e:
+			print(f"Xabar yuborishda xato: {e}")
 	else:
 		print(f"[{event.chat_id}] Xabar cheklangan:", event.message.text)
 
